@@ -60,6 +60,29 @@ def ratio_resize(image, new_size=None):
     return cv2.resize(image, brand_new_size, interpolation=cv2.INTER_AREA)
 
 
+def get_face_area(face):
+    x, y, w, h = list(map(int, face[:4]))
+    return w*h
+
+
+def get_face_distance(face, image_height, image_width):
+    special_points = []
+    # Center point
+    special_points.append([image_width/2, image_height/2])
+    # Rule of thirds intersections
+    third_x = image_width/3
+    third_y = image_height/3
+    for x in range(1, 3):
+        for y in range(1, 3):
+            special_points.append([x*third_x, y*third_y])
+
+    # Return smallest distance to special point
+    x, y, w, h = list(map(int, face[:4]))
+    face_center_x = x + (w/2)
+    face_center_y = y + (h/2)
+    return np.min(euclidean_distances(special_points, [[face_center_x, face_center_y]]))
+
+
 def extract_faces(img, show_landmarks=False, show_crop=False):
     local_img = img.copy()
 

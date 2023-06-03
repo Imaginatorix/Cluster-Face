@@ -1,6 +1,5 @@
 import cv2
 import os
-import shutil
 from sklearn.preprocessing import StandardScaler
 import json
 from helpers import *
@@ -29,34 +28,41 @@ def main():
         image_path = os.path.join(INPUT_DIRECTORY, image_name)
         img = cv2.imread(image_path)
         img = ratio_resize(img)
+        img_height, img_width, _ = img.shape
 
         # Identify main face
         main_face = None
         # Extract faces
         faces = extract_faces(img)
-        # Set main face as the face with the highest confidence (NOTE: is it the first element?)
-        # TODO: Include the face heuristic that the closer the face is to the center (or somewhere special)
-        # Increase its likeliness to be main face
-        for face in faces:
-            confidence = face[-1]
-            if main_face is None or confidence > main_face[-1]:
-                main_face = face
-
         # No face
-        if main_face is None:
+        if len(faces) == 0:
             if not os.path.exists(NO_FACE_DIRECTORY):
                 os.mkdir(NO_FACE_DIRECTORY)
-
             destination = os.path.join(NO_FACE_DIRECTORY, image_name)
-
             try:
                 os.rename(image_path, destination)
             except WindowsError:
                 os.remove(destination)
                 os.rename(image_path, destination)
-
             continue
 
+        # Set main face as the face with the highest confidence_heuristic
+        max_area = max(map(get_face_area, faces))
+        max_distance = max(map(lambda x: get_face_distance(x, img_height, img_width), faces))
+        for face in faces:
+            # Bigger confidence = better
+            confidence = face[-1]
+            # Bigger size = better
+            size_heuristic = get_face_area(face)/max_area
+            # Smaller distance = better
+            distance_heuristic = 1 - (get_face_distance(face, img_height, img_width)/max_distance)
+
+            # Weighted sum of heuristics
+            confidence_heuristic = 0.4*confidence + 0.35*size_heuristic + 0.25*distance_heuristic
+            if main_face is None or confidence_heuristic > main_face[1]:
+                main_face = (face, confidence_heuristic)
+
+        main_face = main_face[0]
         # Crop main_face
         main_face_rect = list(map(int, main_face[:4]))
         x, y, w, h = main_face_rect
@@ -82,7 +88,8 @@ def main():
     scaler = StandardScaler()
     embeddings_scaled = scaler.fit_transform(image_embeddings)
 
-    new_cluster_labels, new_exemplars = cluster_embeddings(embeddings_scaled)
+    # Tried my best to properly sort :<
+    new_cluster_labels, new_exemplars = cluster_embeddings(embeddings_scaled, similarity_function=lambda x: np.mean(x) + 0.9*np.std(x))
     print(f"Number of clusters from new data: {len(new_exemplars)}")
     # End of RUN 1
     # Everything after this point is chaos TT (send help)
@@ -98,8 +105,6 @@ def main():
     
     # Get new exemplar data
     new_exemplars_embeddings = embeddings_scaled[new_exemplars].tolist()
-    new_exemplars_names = image_names[new_exemplars]
-
 
     # RUN 2 (Exemplars)
     # Combine exemplars to cluster
@@ -126,29 +131,25 @@ def main():
         exemplars_data[str(cluster_label)] = exemplar_embedding.tolist()
 
 
-    # Store exemplar images so it could easily be named by user
-    for image_name, cluster_label in zip(new_exemplars_names, new_combined_cluster):
-        image_path = os.path.join(INPUT_DIRECTORY, image_name)
-        extension = image_name.split(".")[-1]
-        destination = os.path.join(EXEMPLARS_DIRECTORY, combined2database_label[cluster_label] + "." + extension)
-
-        try:
-            shutil.copyfile(image_path, destination)
-        except WindowsError:
-            os.remove(destination)
-            shutil.copyfile(image_path, destination)
-
     # Update the exemplar database file
     with open(EXEMPLARS_DATABASE, "w") as f:
         json.dump(exemplars_data, f)
 
 
-    # Transfer files to respective cluster names
+    # Map for respective cluster names
     with open(NAME_MAP_DATABASE, "r") as f:
         cluster_name = json.load(f)
 
     # Map to connect new_cluster_labels to combined_cluster_labels
     new2combined_label = dict(zip(map(str, new_cluster_labels[new_exemplars]), new_combined_cluster))
+
+    # Store exemplar images so it could easily be named by user
+    for index in new_exemplars:
+        proposed_cluster_name = combined2database_label[new2combined_label[str(new_cluster_labels[index])]]
+        destination = os.path.join(EXEMPLARS_DIRECTORY, proposed_cluster_name + ".JPG")
+        cv2.imwrite(destination, main_face_imgs[index])
+
+    # Transfer files to respective cluster names
     for image_name, cluster in zip(image_names, new_cluster_labels):
         image_path = os.path.join(INPUT_DIRECTORY, image_name)
 

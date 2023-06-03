@@ -1,5 +1,5 @@
 # Cluster Face
-**Version 1.0.0**
+**Version 1.1.0**
 ## Sorting Images by Face via Face Clustering
 
 ### Description
@@ -9,9 +9,9 @@ Cluster Face is a program that sorts images based on the faces in it. It sorts t
 There were times in which I had to sort hundreds of images by face in order to easily and efficiently give it to the respective people in the photo. Doing so took me so much time, and so I wanted to remove most of that by automating it via face clustering.
 
 ### What does it do?
-**Version 1.0.0**
+**Version 1.1.0**
 
-***New Features:*** *None (first version)*
+***New Features:*** *Added confidence heuristic*
 
 The main thing the Cluster Face does is it sorts the images by the faces contained in it.
 
@@ -27,6 +27,7 @@ Make sure it to clear everything in the output folder beforehand as it might rep
 
 ### How it works?
 ![Flowchart](./resources/flowchart.drawio.svg)
+
 The program follows the flowchart above.
 
 The main idea of this program is to associate an image with a feature vector or a vector representation of the image (or part of it). The feature vector of our image is the embeddings of the main face. Embeddings are like signatures, they are used to discern or find the similarities of the images based on the distances they have on other embeddings. We then cluster these feature vectors, to see which embeddings are close to one another. Based on the found clusters of feature vectors, we then rearrange the images in the input directory to the output directory, essentially sorting it.
@@ -39,12 +40,8 @@ The main idea of this program is to associate an image with a feature vector or 
 ### Plans on the future:
 I will probably not be working on it actively as I also wanted to create other projects. However, like all my previous projects, I might edit them to fix known issues or add something useful, whatever it may be.
 
-One thing I'll do though is fix known issue #1 (soon, next weekend, or maybe later idk).
-
 ### Known Issues:
-(1) The code to identify the main face isn't to accurate. A suggestion to make it better would be add heuristics. Two heuristics I can think of is: size and position. Starting with size, the bigger the face is, the higher its heuristic value. Next for the position, the closer the face is to the center or those grid line intersections you can see in phones, the higher the heuristic value. The effect of size would be bigger compared to the position as I think the position is an ambigouos way to identify who is being photographed as there are multiple good positions to consider.
-
-(2) I couldn't guarantee that the exemplars of the old iteration would not combine in cluster with each other in the next iteration. Nor can I ensure that the new exemplars of the current iteration will not combine with each other in the next iteration (the 2nd Affinity Propagation (AP)).
+(1) I couldn't guarantee that the exemplars of the old iteration would not combine in cluster with each other in the next iteration. Nor can I ensure that the new exemplars of the current iteration will not combine with each other in the next iteration (the 2nd Affinity Propagation (AP)).
 
 ---
 

@@ -1,5 +1,5 @@
 # Cluster Face
-**Version 1.1.0**
+**Version 1.1.1**
 ## Sorting Images by Face via Face Clustering
 
 ### Description
@@ -24,6 +24,9 @@ First create a virtual environment in your preferred location and access it. Run
 Place your images inside the input directory and then run `python main.py` in the terminal to sort the images into the output directory.
 
 Make sure it to clear everything in the output folder beforehand as it might replace old images that have the same filename as the new ones.
+
+### Preview
+<video src='https://github.com/Imaginatorix/Cluster-Face/assets/77674519/ebccb106-ac88-47c9-a621-9cb29fed409a'></video>
 
 ### How it works?
 ![Flowchart](./resources/flowchart.drawio.svg)
